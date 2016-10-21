@@ -1,0 +1,19 @@
+Package: webinar.cpom
+Type: Package
+Title: Webinar - Contemporary Portfolio Optimization Modeling using R
+Version: 1.0-0
+Date: 2016-10-21
+Author: Ronald Hochreiter <ron@hochreiter.net>
+Maintainer: Ronald Hochreiter <ron@hochreiter.net>
+Description: Webinar - Contemporary Portfolio Optimization Modeling using R
+Depends:
+    R (>= 3.0),
+    quantmod,
+    tseries,
+    fPortfolio,
+    PerformanceAnalytics,
+    PortfolioAnalytics,
+    FRAPO
+License: GPL-3
+URL: http://www.finance-r.com/
+RoxygenNote: 5.0.1
