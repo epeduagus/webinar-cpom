@@ -7,13 +7,7 @@ Author: Ronald Hochreiter <ron@hochreiter.net>
 Maintainer: Ronald Hochreiter <ron@hochreiter.net>
 Description: Webinar - Contemporary Portfolio Optimization Modeling using R
 Depends:
-    R (>= 3.0),
-    quantmod,
-    tseries,
-    fPortfolio,
-    PerformanceAnalytics,
-    PortfolioAnalytics,
-    FRAPO
+    R (>= 3.0)
 License: GPL-3
 URL: http://www.finance-r.com/
 RoxygenNote: 5.0.1
