@@ -184,15 +184,16 @@ library("ROI")
 library("ROML")
 library("ROML.portfolio")
 
-# 7.1. An AML (Algebraic Modeling Language) for R
+# 7.1. An AML (Algebraic Modeling Language) for R (ROML)
 
 m <- model()
-m$variable(x)
-m$variable(y)
+m$variable(x, length=1L)
+m$variable(y, length=1L)
 m$maximize( 2*x + y )
 m$subject_to ( x <= 3 )
 m$subject_to ( y <= 5 )
 opt <- optimize(m, solver="glpk")
+solution(opt)
 
 # 7.2. Full flexibility
 
