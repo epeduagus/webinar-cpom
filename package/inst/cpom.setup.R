@@ -8,7 +8,8 @@
 
 ### Packages from CRAN
 
-package_list <- c("tseries", "quantmod", "PerformanceAnalytics", "PortfolioAnalytics", "fPortfolio", "magrittr"
+package_list <- c("tseries", "quantmod", "PerformanceAnalytics", "PortfolioAnalytics", "fPortfolio", 
+                  "magrittr", "FRAPO",
                   "slam", "registry", "ROI", "Rglpk", "ROI.plugin.glpk", "ROI.plugin.quadprog", "R6")
 
 for(x in package_list) if(!(x %in% rownames(installed.packages()))) { install.packages(x) }
@@ -18,7 +19,7 @@ for(x in package_list) if(!(x %in% rownames(installed.packages()))) { install.pa
 if(!("ROML" %in% rownames(installed.packages()))) { install.packages("ROML", repos="http://R-Forge.R-project.org") }
 if(!("ROML.portfolio" %in% rownames(installed.packages()))) { install.packages("ROML.portfolio", repos="http://R-Forge.R-project.org") }
 
-# Packages from GitHub
+### Packages from GitHub
 
-install_github("rhochreiter/modopt.matlab")
-install_github("rhochreiter/scenportopt")
+if(!("modopt.matlab" %in% rownames(installed.packages()))) { install_github("rhochreiter/modopt.matlab") }
+if(!("scenportopt" %in% rownames(installed.packages()))) { install_github("rhochreiter/scenportopt") }

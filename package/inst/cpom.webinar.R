@@ -10,19 +10,20 @@
 ##### 1. Setup & Data
 
 library(webinar.cpom)
-
-### 1.1. Check Data
-
 library(quantmod)
 library(PerformanceAnalytics)
 
-data(hedgefund)
-assets <- ncol(hedgefund)
-scenarios <- nrow(hedgefund)
+### 1.1. Use Hedge Fund Data
 
-cat("----- Hedge Fund Strategies -----\n", paste0(names(hedgefund), "\n"))
-chart.Bar(hedgefund$Event.Driven)
-charts.PerformanceSummary(hedgefund$Event.Driven)
+data(hedgefund)
+scenario <- hedgefund
+
+assets <- ncol(scenario)
+scenarios <- nrow(scenario)
+
+cat("----- Hedge Fund Strategies -----\n", paste0(names(scenario), "\n"))
+chart.Bar(scenario$Event.Driven)
+charts.PerformanceSummary(scenario$Event.Driven)
 
 #############################################################################
 ##### 2. Package - tseries
@@ -32,9 +33,9 @@ library(tseries)
 ### 2.1. Easy Markowitz Portfolio Optimization
 
 timeframe <- "2003/2007" # Examples: "2003/2007" | "2007/2010"
-portfolio <- round(portfolio.optim(hedgefund[timeframe])$pw, 2)
+portfolio <- round(portfolio.optim(scenario[timeframe])$pw, 2)
 
-pie_labels <- names(hedgefund); pie_labels[which(portfolio == 0)] <- NA
+pie_labels <- names(scenario); pie_labels[which(portfolio == 0)] <- NA
 pie(portfolio, labels=pie_labels, main=paste("Portfolio-Composition ", timeframe))
 
 ### 2.2. Easy Backtesting
@@ -44,21 +45,21 @@ window <- 5 * 12 # 5 years rolling window (5 times 12 months, monthly data)
 # portfolio optimization backtesting in one line/loop!
 ret <- vector()
 for (pos in (window+1):scenarios) 
-  ret <- c(ret, sum(round(portfolio.optim(hedgefund[(pos-window):(pos-1)])$pw, 2) * hedgefund[pos]))
+  ret <- c(ret, sum(round(portfolio.optim(scenario[(pos-window):(pos-1)])$pw, 2) * scenario[pos]))
 
 # create a time series object and plot the performance of backtesting
-backtesting <- as.xts(ret, order.by=index(hedgefund[(window+1):scenarios]))
+backtesting <- as.xts(ret, order.by=index(scenario[(window+1):scenarios]))
 charts.PerformanceSummary(backtesting)
 
 #############################################################################
 ##### 3. Package - fPortfolio
 
-### 3.1. fPortfolio with Hedgefund Strategies
+### 3.1. fPortfolio with scenario Strategies
 
 library(fPortfolio)
 
 # convert time series format
-hedgefund.ts <- as.timeSeries(hedgefund)
+scenario.ts <- as.timeSeries(scenario)
 
 # specification: solver and efficient fronier 
 spec <- portfolioSpec()
@@ -67,21 +68,21 @@ setNFrontierPoints(spec) <- 20
 
 # constraints
 constraints <- c('LongOnly')
-portfolioConstraints(hedgefund.ts, spec, constraints)
+portfolioConstraints(scenario.ts, spec, constraints)
 
 # optimization
-frontier <- portfolioFrontier(hedgefund.ts, spec, constraints)
+frontier <- portfolioFrontier(scenario.ts, spec, constraints)
 print(frontier)
 
 # plotting
 tailoredFrontierPlot(frontier)
 weightsPlot(frontier) 
-weightsPlot(frontier, col=rainbow(ncol(hedgefund))) 
+weightsPlot(frontier, col=rainbow(ncol(scenario))) 
 
 # adding and changing constraints
 constraints <- c('minW[1:assets]=0', 'maxW[1:assets]=0.5')
-portfolioConstraints(hedgefund.ts, spec, constraints)
-frontier <- portfolioFrontier(hedgefund.ts, spec, constraints)
+portfolioConstraints(scenario.ts, spec, constraints)
+frontier <- portfolioFrontier(scenario.ts, spec, constraints)
 weightsPlot(frontier) 
 
 #############################################################################
@@ -91,7 +92,7 @@ library(modopt.matlab)
 
 ### 4.1. Manual Minimum Variance Portfolio (MVP) computation
 
-H <- cov(hedgefund)
+H <- cov(scenario)
 f <- rep(0, assets)
 Aeq <- rep(1, assets)
 beq <- 1
@@ -116,7 +117,7 @@ markowitz <- function(data, mu) {
   return(round(solution$x, 2))
 }
 
-data <- hedgefund["2011/2015"]
+data <- scenario["2011/2015"]
 
 portfolio.m <- c()
 portfolio.sd <- c()
@@ -140,7 +141,7 @@ library(scenportopt)
 
 ### 6.1. Comparison
 
-markowitz <- model <- optimal.portfolio(hedgefund)
+markowitz <- model <- optimal.portfolio(scenario)
 
 # Expected Shortfall/CVaR with alpha=95% and alpha=90%
 cvar95 <- optimal.portfolio(objective(model, "expected.shortfall"))
@@ -151,23 +152,23 @@ mad <- optimal.portfolio(objective(model, "mad"))
 
 # Plot Comparison
 compare <- matrix(c(x(markowitz), x(mad), x(cvar95), x(cvar90)), nrow=nasset(model), byrow=FALSE)
-barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(hedgefund), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
+barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(scenario), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
 
 # Add upper bounds (0.15) and repeat optimizations
-markowitz <- model <- optimal.portfolio(upper.bound(portfolio.model(hedgefund), 0.15))
+markowitz <- model <- optimal.portfolio(upper.bound(portfolio.model(scenario), 0.15))
 cvar95 <- optimal.portfolio(objective(model, "expected.shortfall"))
 cvar90 <- optimal.portfolio(alpha(model, 0.1))
 mad <- optimal.portfolio(objective(model, "mad"))
 compare <- matrix(c(x(markowitz), x(mad), x(cvar95), x(cvar90)), nrow=nasset(model), byrow=FALSE)
-barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(hedgefund), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
+barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(scenario), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
 
 ### 6.2. Natural fit into contemporary R coding styles (piping)
 
-x(optimal.portfolio(hedgefund))
+x(optimal.portfolio(scenario))
 
 library(magrittr)
-hedgefund %>% optimal.portfolio %>% x
-hedgefund %>% portfolio.model %>% objective("expected.shortfall") %>% alpha(0.1) %>% optimal.portfolio %>% x
+scenario %>% optimal.portfolio %>% x
+scenario %>% portfolio.model %>% objective("expected.shortfall") %>% alpha(0.1) %>% optimal.portfolio %>% x
 
 ### 6.3. Active-extension portfolios ("130/30")
 
@@ -203,6 +204,6 @@ m$maximize ( reward(portfolio) )
 m$subject_to ( budget_norm(portfolio) )
 m$subject_to ( portfolio[1] + portfolio[3] + portfolio[5] == 0.5 )
 
-opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(hedgefund))) 
+opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario))) 
 as.numeric(opt$solution)
-colMeans(hedgefund)
+colMeans(scenario)
