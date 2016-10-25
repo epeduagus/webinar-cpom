@@ -1,8 +1,10 @@
 #############################################################################
 ###
-###  Webinar - Contemporary Portfolio Optimization Modeling with R
-###  -------------------------------------------------------------
-###  Ronald Hochreiter - http://www.finance-r.com/cpom/
+### Webinar - Contemporary Portfolio Optimization Modeling with R
+### -------------------------------------------------------------
+### Ronald Hochreiter - http://www.finance-r.com/cpom/
+###
+### Webinar Version 1 - October 25th, 2016 (Interactive Brokers)
 ###
 #############################################################################
 

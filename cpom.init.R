@@ -18,8 +18,11 @@ library(devtools)
 install_github("rhochreiter/webinar-cpom/package")
 library(webinar.cpom)
 
+# Choose the version of the Webinar
+version <- 1
+
 # Run the setup package, which installs all necessary packages
-source(paste0(path.package("webinar.cpom"), '/cpom.setup.1.R'))
+source(paste0(path.package("webinar.cpom"), "/cpom.setup.", version, ".R"))
 
 # Open the Webinar script in the editor pane
-file.edit(paste0(path.package("webinar.cpom"), '/cpom.webinar.1.R'))
+file.edit(paste0(path.package("webinar.cpom"), "/cpom.webinar.", version, ".R"))

@@ -1,8 +1,10 @@
 #############################################################################
 ###
-###  Webinar - Contemporary Portfolio Optimization Modeling with R
-###  -------------------------------------------------------------
-###  Ronald Hochreiter - http://www.finance-r.com/cpom/
+### Webinar - Contemporary Portfolio Optimization Modeling with R
+### -------------------------------------------------------------
+### Ronald Hochreiter - http://www.finance-r.com/cpom/
+###
+### Webinar Version 1 - October 25th, 2016 (Interactive Brokers)
 ###
 #############################################################################
 
@@ -134,6 +136,31 @@ lines(portfolio.sd, portfolio.m)
 
 #############################################################################
 ##### 5. PortfolioAnalytics
+
+library(PortfolioAnalytics)
+library(ROI)
+
+# initialize portfolio
+init.portfolio <- portfolio.spec(assets = colnames(scenario.set))
+print.default(init.portfolio)
+
+# adding constraints
+init.portfolio <- add.constraint(portfolio = init.portfolio, type = "full_investment")
+init.portfolio <- add.constraint(portfolio = init.portfolio, type = "long_only")
+
+# objeective: different risk measures
+minSD.portfolio <- add.objective(portfolio=init.portfolio, type="risk", name="StdDev")
+meanES.portfolio <- add.objective(portfolio=init.portfolio, type="risk", name="ES")
+
+# optimization
+minSD.opt <- optimize.portfolio(R = scenario.set, portfolio = minSD.portfolio, optimize_method = "ROI", trace = TRUE)
+meanES.opt <- optimize.portfolio(R = scenario.set, portfolio = meanES.portfolio, optimize_method = "ROI", trace = TRUE)
+
+# check and plot results
+print(minSD.opt)
+print(meanES.opt)
+portfolio.pie(round(minSD.opt$weights,2), scenario.set)
+portfolio.pie(round(meanES.opt$weights,2), scenario.set)
 
 #############################################################################
 ##### 6. scenportopt
