@@ -38,8 +38,9 @@ library(tseries)
 
 timeframe <- "2003/2007" # Examples: "2003/2007" | "2007/2010"
 portfolio <- round(portfolio.optim(scenario.set[timeframe])$pw, 2)
-portfolio <- scenario.set[timeframe] %>% portfolio.optim() %>% .$pw %>% round(2)
 portfolio.pie(portfolio, scenario.set)
+
+portfolio <- scenario.set[timeframe] %>% portfolio.optim() %>% .$pw %>% round(2)
 
 ### 2.2. Easy Backtesting
 
@@ -56,8 +57,6 @@ charts.PerformanceSummary(backtesting)
 
 #############################################################################
 ##### 3. Package - fPortfolio
-
-### 3.1. fPortfolio with scenario Strategies
 
 library(fPortfolio)
 
@@ -165,7 +164,7 @@ portfolio.pie(round(meanES.opt$weights,2), scenario.set)
 
 library(scenportopt)
 
-### 6.1. Comparison
+### 6.1. Comparison of risk measures
 
 markowitz <- model <- optimal.portfolio(scenario.set)
 
