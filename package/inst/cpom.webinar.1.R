@@ -132,8 +132,6 @@ for(m in seq(mean(colMeans(data)), max(colMeans(data))*0.99, length.out=10)) {
 plot(portfolio.sd, portfolio.m, xlab="Standard Deviation", ylab="Return", main="Efficient Frontier")
 lines(portfolio.sd, portfolio.m)
 
-### 4.3. Manual CVaR/ES modeling
-
 #############################################################################
 ##### 5. PortfolioAnalytics
 
@@ -214,6 +212,10 @@ library("ROML.portfolio")
 
 ### 7.1. An AML (Algebraic Modeling Language) for R (ROML)
 
+# maximize   2x1 + x2
+# subject to x1 + x2 <= 10
+#            x1 <= 7
+
 m <- model()
 m$variable(x1, length=1L)
 m$variable(x2, length=1L)
@@ -225,9 +227,9 @@ m$subject_to ( x1 <= 7 )
 opt <- optimize(m, solver="glpk")
 solution(opt)
 
-### 7.2. Full flexibility for learning & prototyping
+### 7.2. ROML.portfolio - full flexibility for learning & prototyping
 
-# 7.2.1. Maximize expectation, use general constraints
+# 7.2.1. Maximize expectation, use any additional constraint
 
 m <- model(); m$variable(portfolio, lb=0) 
 
@@ -265,7 +267,7 @@ portfolio.pie(x, scenario.set)
 
 m <- model(); m$variable(portfolio, lb=0)
 
-m$minimize   ( cvar(portfolio, 0.02) ) # mad(portfolio) | omega(portfolio) | cvar(portfolio, 0.02)
+m$minimize   ( cvar(portfolio, 0.05) ) # cvar(portfolio, 0.05) | mad(portfolio)
 m$subject_to ( budget_norm(portfolio) )
 
 opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario.set))) 
