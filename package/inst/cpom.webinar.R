@@ -12,18 +12,20 @@
 library(webinar.cpom)
 library(quantmod)
 library(PerformanceAnalytics)
+library(magrittr)
 
 ### 1.1. Use Hedge Fund Data
 
 data(hedgefund)
-scenario <- hedgefund
+scenario.set <- hedgefund
 
-assets <- ncol(scenario)
-scenarios <- nrow(scenario)
+assets <- ncol(scenario.set)
+scenarios <- nrow(scenario.set)
 
-cat("----- Hedge Fund Strategies -----\n", paste0(names(scenario), "\n"))
-chart.Bar(scenario$Event.Driven)
-charts.PerformanceSummary(scenario$Event.Driven)
+cat("\n", paste0(names(scenario.set), "\n"))
+
+chart.Bar(scenario.set$Event.Driven)
+charts.PerformanceSummary(scenario.set$Event.Driven)
 
 #############################################################################
 ##### 2. Package - tseries
@@ -33,10 +35,9 @@ library(tseries)
 ### 2.1. Easy Markowitz Portfolio Optimization
 
 timeframe <- "2003/2007" # Examples: "2003/2007" | "2007/2010"
-portfolio <- round(portfolio.optim(scenario[timeframe])$pw, 2)
-
-pie_labels <- names(scenario); pie_labels[which(portfolio == 0)] <- NA
-pie(portfolio, labels=pie_labels, main=paste("Portfolio-Composition ", timeframe))
+portfolio <- round(portfolio.optim(scenario.set[timeframe])$pw, 2)
+portfolio <- scenario.set[timeframe] %>% portfolio.optim() %>% .$pw %>% round(2)
+portfolio.pie(portfolio, scenario.set)
 
 ### 2.2. Easy Backtesting
 
@@ -45,10 +46,10 @@ window <- 5 * 12 # 5 years rolling window (5 times 12 months, monthly data)
 # portfolio optimization backtesting in one line/loop!
 ret <- vector()
 for (pos in (window+1):scenarios) 
-  ret <- c(ret, sum(round(portfolio.optim(scenario[(pos-window):(pos-1)])$pw, 2) * scenario[pos]))
+  ret <- c(ret, sum(round(portfolio.optim(scenario.set[(pos-window):(pos-1)])$pw, 2) * scenario.set[pos]))
 
 # create a time series object and plot the performance of backtesting
-backtesting <- as.xts(ret, order.by=index(scenario[(window+1):scenarios]))
+backtesting <- as.xts(ret, order.by=index(scenario.set[(window+1):scenarios]))
 charts.PerformanceSummary(backtesting)
 
 #############################################################################
@@ -59,7 +60,7 @@ charts.PerformanceSummary(backtesting)
 library(fPortfolio)
 
 # convert time series format
-scenario.ts <- as.timeSeries(scenario)
+scenario.ts <- as.timeSeries(scenario.set)
 
 # specification: solver and efficient fronier 
 spec <- portfolioSpec()
@@ -77,7 +78,7 @@ print(frontier)
 # plotting
 tailoredFrontierPlot(frontier)
 weightsPlot(frontier) 
-weightsPlot(frontier, col=rainbow(ncol(scenario))) 
+weightsPlot(frontier, col=rainbow(ncol(scenario.set))) 
 
 # adding and changing constraints
 constraints <- c('minW[1:assets]=0', 'maxW[1:assets]=0.5')
@@ -92,7 +93,7 @@ library(modopt.matlab)
 
 ### 4.1. Manual Minimum Variance Portfolio (MVP) computation
 
-H <- cov(scenario)
+H <- cov(scenario.set)
 f <- rep(0, assets)
 Aeq <- rep(1, assets)
 beq <- 1
@@ -117,7 +118,7 @@ markowitz <- function(data, mu) {
   return(round(solution$x, 2))
 }
 
-data <- scenario["2011/2015"]
+data <- scenario.set["2011/2015"]
 
 portfolio.m <- c()
 portfolio.sd <- c()
@@ -141,7 +142,7 @@ library(scenportopt)
 
 ### 6.1. Comparison
 
-markowitz <- model <- optimal.portfolio(scenario)
+markowitz <- model <- optimal.portfolio(scenario.set)
 
 # Expected Shortfall/CVaR with alpha=95% and alpha=90%
 cvar95 <- optimal.portfolio(objective(model, "expected.shortfall"))
@@ -152,27 +153,26 @@ mad <- optimal.portfolio(objective(model, "mad"))
 
 # Plot Comparison
 compare <- matrix(c(x(markowitz), x(mad), x(cvar95), x(cvar90)), nrow=nasset(model), byrow=FALSE)
-barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(scenario), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
+barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(scenario.set), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
 
 # Add upper bounds (0.15) and repeat optimizations
-markowitz <- model <- optimal.portfolio(upper.bound(portfolio.model(scenario), 0.15))
+markowitz <- model <- optimal.portfolio(upper.bound(portfolio.model(scenario.set), 0.15))
 cvar95 <- optimal.portfolio(objective(model, "expected.shortfall"))
 cvar90 <- optimal.portfolio(alpha(model, 0.1))
 mad <- optimal.portfolio(objective(model, "mad"))
 compare <- matrix(c(x(markowitz), x(mad), x(cvar95), x(cvar90)), nrow=nasset(model), byrow=FALSE)
-barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(scenario), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
+barplot(t(compare), beside=TRUE, col=rainbow(4), las=3, names.arg=names(scenario.set), legend=c("Markowitz", "MAD", "CVaR (95%)", "CVaR (90%)"))
 
 ### 6.2. Natural fit into contemporary R coding styles (piping)
 
-x(optimal.portfolio(scenario))
+x(optimal.portfolio(scenario.set))
 
-library(magrittr)
-scenario %>% optimal.portfolio %>% x
-scenario %>% portfolio.model %>% objective("expected.shortfall") %>% alpha(0.1) %>% optimal.portfolio %>% x
+scenario.set %>% optimal.portfolio %>% x
+scenario.set %>% portfolio.model %>% objective("expected.shortfall") %>% alpha(0.1) %>% optimal.portfolio %>% x
 
 ### 6.3. Active-extension portfolios ("130/30")
 
-model <- optimal.portfolio(data)
+model <- optimal.portfolio(scenario.set)
 model <- active.extension(model, 130, 30)
 cvar13030 <- optimal.portfolio(objective(model, "expected.shortfall"))
 mad13030 <- optimal.portfolio(objective(model, "mad"))
@@ -185,25 +185,97 @@ library("ROI")
 library("ROML")
 library("ROML.portfolio")
 
-# 7.1. An AML (Algebraic Modeling Language) for R (ROML)
+### 7.1. An AML (Algebraic Modeling Language) for R (ROML)
 
 m <- model()
-m$variable(x, length=1L)
-m$variable(y, length=1L)
-m$maximize( 2*x + y )
-m$subject_to ( x <= 3 )
-m$subject_to ( y <= 5 )
+m$variable(x1, length=1L)
+m$variable(x2, length=1L)
+
+m$maximize   ( 2*x1 + x2 )
+m$subject_to ( x1 + x2 <= 10 )
+m$subject_to ( x1 <= 7 )
+
 opt <- optimize(m, solver="glpk")
 solution(opt)
 
-# 7.2. Full flexibility
+### 7.2. Full flexibility for learning & prototyping
 
-m <- model()
-m$variable(portfolio, lb = 0) 
-m$maximize ( reward(portfolio) )
+# 7.2.1. Maximize expectation, use general constraints
+
+m <- model(); m$variable(portfolio, lb=0) 
+
+m$maximize   ( reward(portfolio) )
 m$subject_to ( budget_norm(portfolio) )
 m$subject_to ( portfolio[1] + portfolio[3] + portfolio[5] == 0.5 )
 
-opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario))) 
-as.numeric(opt$solution)
-colMeans(scenario)
+opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario.set))) 
+x <- round(as.numeric(opt$solution), 2)
+colMeans(scenario.set)
+
+# 7.2.2. Minimize Markowitz risk
+
+m <- model(); m$variable(portfolio, lb=0)
+
+m$minimize   ( markowitz(portfolio) )
+m$subject_to ( budget_norm(portfolio) )
+
+opt <- optimize(m, solver="quadprog", data=list(returns = as.matrix(scenario.set))) 
+x <- round(as.numeric(opt$solution), 2)
+
+portfolio.pie(x, scenario.set)
+
+# 7.2.3. Changing the risk measure using building blocks (objective)
+
+# reward        | Portfolio return/reward
+# markowitz     | Variance
+# mad           | Mean Absolute Deviation
+# downside_var  | Lower semi-variance
+# downside_mad  | Lower semi-mean absolute deviation 
+# cvar          | Conditional Value at Risk (CVaR) / Expected Shortfall
+# minimax_young | Minimax portfolio
+# sharpe        | Sharpe ratio
+# omega         | Omega measure
+
+m <- model(); m$variable(portfolio, lb=0)
+
+m$minimize   ( cvar(portfolio, 0.02) ) # mad(portfolio) | omega(portfolio) | cvar(portfolio, 0.02)
+m$subject_to ( budget_norm(portfolio) )
+
+opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario.set))) 
+x <- round(as.numeric(opt$solution[grep("portfolio", names(opt$solution))]), 2)
+
+portfolio.pie(x, scenario.set)
+
+# 7.2.4. Combination Example 1, using building blocks in the constraints
+
+# reward       | Target return
+# budget_norm  | Budget normalization (Sum of x=1)
+# budget       | Budget constraint
+# turnover     | Maximum turnover
+# cardinality  | Cardinality
+# markowitz    | Variance
+# cvar         | Conditional Value at Risk (CVaR) / Expected Shortfall
+
+m <- model(); m$variable(portfolio, lb=0)
+
+m$maximize   ( reward(portfolio) )
+m$subject_to ( cvar(portfolio, 0.95) <= 0.02 )
+m$subject_to ( cvar(portfolio, 0.99) <= 0.03 ) # 0.03 | 0.04
+
+opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario.set)))  
+x <- round(opt$solution[grep("portfolio", names(opt$solution))], 3)
+
+portfolio.pie(x, scenario.set)
+
+# 7.2.5. Combination Example 2
+
+m <- model(); m$variable(portfolio, lb=0)
+
+m$maximize   ( omega(portfolio) )
+m$subject_to ( cardinality(portfolio) <= 7 )
+m$subject_to ( cvar(portfolio, 0.95) <= 0.02 ) # 0.02 | 0.01
+
+opt <- optimize(m, solver="glpk", data=list(returns = as.matrix(scenario.set)))  
+x <- as.numeric(round(opt$solution[grep("portfolio", names(opt$solution))]/ opt$solution[grep("z", names(opt$solution))], 3))
+
+portfolio.pie(x, scenario.set)
